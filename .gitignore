@@ -9,3 +9,11 @@ env
 
 #  Cache
 __pycache__
+
+# Dataset
+dataset
+dataset.zip
+*.pdf
+
+# MACOSX
+__MACOSX
