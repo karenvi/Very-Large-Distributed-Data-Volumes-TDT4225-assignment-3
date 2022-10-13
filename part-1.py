@@ -37,7 +37,15 @@ class Program:
         "date_time": None
         }
         self.db.TrackPoint.replace_one({'_id':currentID}, doc, upsert=True)
+        
        
+    def fetch_last_insert_id(self, collection):
+        id = self.db[collection].find().sort("_id",-1).limit(1)[0]["_id"] 
+        # sort("_id", -1) gir nyeste. 1 hadde gitt eldste
+        # Se https://stackoverflow.com/questions/53581201/mongodb-console-getting-the-id-of-a-cursor-object for forklaring på id
+        print("Latest inserted document in", collection, "has id", id)
+        return id
+
 
     def fetch_documents(self, collection_name):
         collection = self.db[collection_name]
@@ -62,6 +70,7 @@ def main():
     try:
         program = Program()
         program.insert_user("001", True)
+        program.fetch_last_insert_id("Activity")
         #program.insert_user("000", False)
         program.insert_activity("000", None, "2009-10-11, 14:04:30", "2009-10-11, 14:04:35")
     except Exception as e:
