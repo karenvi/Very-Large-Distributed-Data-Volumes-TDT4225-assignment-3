@@ -17,8 +17,14 @@ class DbConnector:
                  DATABASE=config('DATABASE'),
                  HOST=config('HOST'),
                  USER=config('MONGO_DB_USER'),
-                 PASSWORD=config('PASSWORD')):
-        uri = "mongodb://%s:%s@%s/%s" % (USER, PASSWORD, HOST, DATABASE)
+                 PASSWORD=config('PASSWORD'),
+                 ENABLE_VM=config('ENABLE_VM', '0') == '1'):
+
+        if ENABLE_VM:
+            uri = "mongodb://%s:%s@%s/%s" % (USER, PASSWORD, HOST, DATABASE)
+        else:
+            uri = f"mongodb://localhost:27017/{DATABASE}"
+
         # Connect to the databases
         try:
             self.client = MongoClient(uri)
