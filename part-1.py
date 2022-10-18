@@ -4,6 +4,7 @@ import pandas as pd
 import os
 from decouple import config
 from bson.objectid import ObjectId
+from tqdm import tqdm
 
 
 class Program:
@@ -19,59 +20,35 @@ class Program:
             'has_labels': has_labels,
             'activities': activities
         }
-        self.db.User.replace_one({'_id':id}, doc, upsert=True) # if user exists update with doc, else insert doc
-        #self.db.User.insert_one(doc)
-        
-    def insert_activity(self, user_id, transportation_mode, start_date_time, end_date_time):       
-        doc = {
-        # because _id is not set, mongodb will set _id to unique objectID
-        "user_id": user_id, 
-        "transportation_mode": transportation_mode,
-        "start_date_time": start_date_time,
-        "end_date_time": end_date_time
-        }
-        self.db.Activity.replace_one({'user_id':user_id}, doc, upsert=True) # burde vel egt heller query _id siden den er unik
-    
-    def insert_trackpoint(self, currentID):
-        doc = {
-        "activity_id": None, # none er bare placeholder atm
-        "lat": None,
-        "lon": None,
-        "altitude": None,
-        "date_time": None
-        }
-        self.db.TrackPoint.replace_one({'_id':currentID}, doc, upsert=True)
-        
-       
-    def fetch_last_insert_id(self, collection):
-        # sort("_id", -1) gir nyeste. 1 hadde gitt eldste
-        # Se https://stackoverflow.com/questions/53581201/mongodb-console-getting-the-id-of-a-cursor-object for forklaring på id
-        id = self.db[collection].find().sort("_id",-1).limit(1)[0]["_id"] 
-        print("Latest inserted document in", collection, "has id", id)
-        return id
+        # If user exists update with doc, else insert doc
+        self.db.User.replace_one({'_id':id}, doc, upsert=True)
 
+    def insert_trackpoints(self, trackpoints):
+        self.db.TrackPoint.insert_many(trackpoints)
 
     def fetch_documents(self, collection_name):
         collection = self.db[collection_name]
         documents = collection.find({})
         for doc in documents: 
             pprint(doc)
-        
 
     def drop_coll(self, collection_name):
         collection = self.db[collection_name]
         collection.drop()
 
-        
     def show_coll(self):
         collections = self.client['test'].list_collection_names()
         print(collections)
-        
+   
     def insert_dataset(self):
         dataset_path = config('DATASET_PATH')
         # Read labeled_ids.txt file
         labeled_ids = pd.read_csv(
-            f'{dataset_path}/labeled_ids.txt', delim_whitespace=True, header=None, dtype=str)
+            f'{dataset_path}/labeled_ids.txt',
+            delim_whitespace=True,
+            header=None,
+            dtype=str
+        )
 
         subfolders = os.listdir(f'{dataset_path}/Data')
         for i, user in enumerate(subfolders):
@@ -88,7 +65,7 @@ class Program:
             activities = []
 
             # Iterate through all activities for a specific user
-            for activity in os.listdir(user_dir):
+            for activity in tqdm(os.listdir(user_dir)):
                 plt_path = f'{user_dir}/{activity}'
                 file = pd.read_csv(
                     plt_path,
@@ -156,19 +133,10 @@ class Program:
                                 "end_date_time": end_date_time
                             }
                             activities.append(activity)
-                            # self.insert_activity(
-                            #     user, transportation_mode, start_date_time, end_date_time)
-                            # activity_id = self.fetch_last_insert_id()
-                            # file['activity_id'] = activity_id
-                            # self.insert_track_points_batch(
-                            #     list(file.itertuples(index=False, name=None)))
+                            file['activity_id'] = activity_id
+                            trackpoints = file.to_dict(orient='records')
+                            self.insert_trackpoints(trackpoints)
                         else:
-                            # self.insert_activity(
-                            #     user, 'NULL', start_date_time, end_date_time)
-                            # activity_id = self.fetch_last_insert_id()
-                            # file['activity_id'] = activity_id
-                            # self.insert_track_points_batch(
-                            #     list(file.itertuples(index=False, name=None)))
                             activity_id = ObjectId()
                             activity = {
                                 "_id": activity_id,
@@ -177,13 +145,10 @@ class Program:
                                 "end_date_time": end_date_time
                             }
                             activities.append(activity)
+                            file['activity_id'] = activity_id
+                            trackpoints = file.to_dict(orient='records')
+                            self.insert_trackpoints(trackpoints)
                     else:
-                        # self.insert_activity(
-                        #     user, 'NULL', start_date_time, end_date_time)
-                        # activity_id = self.fetch_last_insert_id()
-                        # file['activity_id'] = activity_id
-                        # self.insert_track_points_batch(
-                        #     list(file.itertuples(index=False, name=None)))
                         activity_id = ObjectId()
                         activity = {
                             "_id": activity_id,
@@ -192,6 +157,9 @@ class Program:
                             "end_date_time": end_date_time
                         }
                         activities.append(activity)
+                        file['activity_id'] = activity_id
+                        trackpoints = file.to_dict(orient='records')
+                        self.insert_trackpoints(trackpoints)
                 self.insert_user(user, user_has_labels, activities)
          
 
@@ -199,11 +167,7 @@ def main():
     program = None
     try:
         program = Program()
-        #program.insert_activity("000", None, "2009-10-11, 14:04:30", "2009-10-11, 14:04:35")
-        #program.fetch_last_insert_id("Activity")
-        
         program.insert_dataset()
-        #program.drop_coll("User")
         
     except Exception as e:
         print("ERROR: Failed to use database:", e)
