@@ -160,7 +160,7 @@ class Program:
                         file['activity_id'] = activity_id
                         trackpoints = file.to_dict(orient='records')
                         self.insert_trackpoints(trackpoints)
-                self.insert_user(user, user_has_labels, activities)
+            self.insert_user(user, user_has_labels, activities)
          
 
 def main():
