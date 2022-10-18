@@ -10,6 +10,8 @@ In order to connect to the VM, set `ENABLE_VM = 1` in the `.env` file.
 
 Instructions for how to run a local instance of MongoDB.
 
+In order to connect to Docker, set `ENABLE_VM = 0` in the `.env` file.
+
 #### Requirements
 
 - Docker / Docker-Compose
