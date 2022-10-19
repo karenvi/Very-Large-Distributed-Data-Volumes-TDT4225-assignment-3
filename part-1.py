@@ -1,4 +1,7 @@
-from pprint import pprint 
+from enum import unique
+import operator
+from pprint import pprint
+from tracemalloc import start 
 from DbConnector import DbConnector
 import pandas as pd
 import os
@@ -164,16 +167,46 @@ class Program:
 
     def task_6(self):
         print("\nTASK 6a: Find the year with the most activities. \n")
-        users = self.db["User"]
-        total_users = users.count_documents(filter={})
-        # Since the activities are in an array in the collection User we must use $unwind to deconstruct the array field
-        total_activities = users.aggregate([
-            {"$unwind": "$activities"},
-            {"$count": "activities"}]).next()
-        print(total_activities)
+        user_collection = self.db["User"]
+        user_list = list(user_collection.aggregate([{
+            '$unwind': '$activities'
+            }]))
+        all_years = []
+        distinct_years = []
+        count_activities_per_year = {}
+        count_hours_per_year = {}
+
+        # Basically doing the same as in task 5
+        for user in user_list:
+            actitivity_docs = user["activities"]
+            end_year = str(actitivity_docs["end_date_time"])
+            all_years.append(end_year.split("-")[0])
+
+        for year in all_years:
+            if (year not in distinct_years):
+                distinct_years.append(year)
+                count_activities_per_year[year] = 0
+                count_hours_per_year[year] = 0
+            for uniqueYear in distinct_years:
+                if (year == uniqueYear):
+                    count_activities_per_year[uniqueYear] += 1
         
+        sorted_dict_year = sorted(count_activities_per_year.items(), key=operator.itemgetter(1), reverse=True)
+        print("Most activities registered in " + sorted_dict_year[0][0] + " with a total of " + str(sorted_dict_year[0][1]) + " activities!")
 
         print("\nTASK 6b: Is this also the year with most recorded hours?\n")
+        for user in user_list:
+            actitivity_docs = user["activities"]
+            start_date = actitivity_docs["start_date_time"]
+            end_date = actitivity_docs["end_date_time"]
+            only_year = str(start_date).split("-")[0]
+            hours = (end_date - start_date).seconds
+            count_hours_per_year[only_year] += round(hours / 3600)
+        
+        sorted_hours = sorted(count_hours_per_year.items(), key=operator.itemgetter(1), reverse=True)
+        print("No, " + sorted_hours[0][0] + " is the year with the most recorded hours. It has " + str(sorted_hours[0][1]) + " hours recorded.")
+            
+
 
 
 
