@@ -1,4 +1,5 @@
-from pprint import pprint 
+from pprint import pprint
+from random import random 
 from DbConnector import DbConnector
 import pandas as pd
 import os
@@ -161,13 +162,44 @@ class Program:
                         trackpoints = file.to_dict(orient='records')
                         self.insert_trackpoints(trackpoints)
             self.insert_user(user, user_has_labels, activities)
-         
+
+    def task_5(self):
+        print("\nTASK 5: Find all types of transportation modes and count how many activities that are tagged with these transportation mode labels.\n")
+        user_collection = self.db["User"]
+        user_ids = list(user_collection.find({}))
+        all_transport = []
+        distinct_transport = []
+        transport_modes_and_values = {}
+
+        for user in user_ids:
+            ac_list = user["activities"]
+            for ac in ac_list:
+                mode = ac["transportation_mode"]
+                if (mode != "NULL"):
+                    all_transport.append(mode)
+        
+        for transport in all_transport:
+            if (transport not in distinct_transport):
+                distinct_transport.append(transport)
+        
+        for transport in distinct_transport:
+            transport_modes_and_values[transport] = 0
+        
+        for transport in all_transport:
+            for transport_mode in distinct_transport:
+                if (transport == transport_mode):
+                    transport_modes_and_values[transport_mode] += 1
+        
+        for key, value in transport_modes_and_values.items():
+            print(key + ": " + str(value))
+
 
 def main():
     program = None
     try:
         program = Program()
-        program.insert_dataset()
+        # program.insert_dataset()
+        program.task_5()
         
     except Exception as e:
         print("ERROR: Failed to use database:", e)
