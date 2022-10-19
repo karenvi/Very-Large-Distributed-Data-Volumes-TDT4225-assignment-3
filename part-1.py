@@ -161,13 +161,26 @@ class Program:
                         trackpoints = file.to_dict(orient='records')
                         self.insert_trackpoints(trackpoints)
             self.insert_user(user, user_has_labels, activities)
-         
+
+    def task_1(self):
+        print("\n TASK 1: Count the number of users, activities and trackpoints. \n")
+        users = self.db["User"]
+        usersTotal = users.count_documents(filter={})
+        print("Number of users: ", usersTotal)
+
+        activitiesTotal = users.aggregate([{"$unwind": "$activities"},{"$count": "activities"}]).next()
+        print("Number of activities:", list(activitiesTotal.values()).pop())
+
+        trackpointsTotal = self.db["TrackPoint"].count_documents(filter={})
+        print("Number of trackpoints:", trackpointsTotal)
+
 
 def main():
     program = None
     try:
         program = Program()
-        program.insert_dataset()
+        program.task_1()
+        #program.insert_dataset()
         
     except Exception as e:
         print("ERROR: Failed to use database:", e)
