@@ -161,13 +161,28 @@ class Program:
                         trackpoints = file.to_dict(orient='records')
                         self.insert_trackpoints(trackpoints)
             self.insert_user(user, user_has_labels, activities)
-         
+
+    def task_6(self):
+        print("\nTASK 6a: Find the year with the most activities. \n")
+        users = self.db["User"]
+        total_users = users.count_documents(filter={})
+        # Since the activities are in an array in the collection User we must use $unwind to deconstruct the array field
+        total_activities = users.aggregate([
+            {"$unwind": "$activities"},
+            {"$count": "activities"}]).next()
+        print(total_activities)
+        
+
+        print("\nTASK 6b: Is this also the year with most recorded hours?\n")
+
+
 
 def main():
     program = None
     try:
         program = Program()
-        program.insert_dataset()
+        # program.insert_dataset()
+        program.task_6()
         
     except Exception as e:
         print("ERROR: Failed to use database:", e)
