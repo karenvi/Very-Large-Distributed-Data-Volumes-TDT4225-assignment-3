@@ -172,11 +172,11 @@ class Program:
         transport_modes_and_values = {}
 
         for user in user_ids:
-            ac_list = user["activities"]
-            for ac in ac_list:
-                mode = ac["transportation_mode"]
-                if (mode != "NULL"):
-                    all_transport.append(mode)
+            activities_documents = user["activities"]
+            for activity in activities_documents:
+                transportation_modes = activity["transportation_mode"]
+                if (transportation_modes != "NULL"):
+                    all_transport.append(transportation_modes)
         
         for transport in all_transport:
             if (transport not in distinct_transport):
