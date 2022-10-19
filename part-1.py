@@ -164,13 +164,13 @@ class Program:
 
     def task_2(self):
         print("\nTASK 2: Find average number of activities per user.\n")
-        users = self.db["User"]
-        total_users = users.count_documents(filter={})
+        user_collection = self.db["User"]
+        count_users = user_collection.count_documents(filter={})
         # Since the activities are in an array in the collection User we must use $unwind to deconstruct the array field
-        total_activities = users.aggregate([
+        count_activities = user_collection.aggregate([
             {"$unwind": "$activities"},
             {"$count": "activities"}]).next()
-        print(total_activities["activities"] / total_users)
+        print("The average number of activities per user is: " + str(count_activities["activities"] / count_users))
 
 
 def main():
