@@ -175,7 +175,7 @@ class Program:
             activities_documents = user["activities"]
             for activity in activities_documents:
                 transportation_modes = activity["transportation_mode"]
-                if (transportation_modes != "NULL"):
+                if (transportation_modes != None):
                     all_transport.append(transportation_modes)
         
         for transport in all_transport:
