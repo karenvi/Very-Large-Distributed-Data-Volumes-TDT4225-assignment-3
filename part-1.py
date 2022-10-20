@@ -6,6 +6,7 @@ import pandas as pd
 import os
 from decouple import config
 from bson.objectid import ObjectId
+import datetime
 from tqdm import tqdm
 from tabulate import tabulate
 
@@ -195,6 +196,37 @@ class Program:
         print("Users who have taken taxi:")
         [print(i) for i in result]
 
+    def task_7(self):
+        print("\n---\n\nTASK 7: Find the total distance (in km) walked in 2008, by user with id=112 \n")
+        activities = list(self.db.User.find({"_id": "112"}))[0]["activities"]
+        #print(datetime.datetime.strptime("2008-05-16 17:07:09", "%Y-%m-%d %H:%M:%S").year)
+
+        filteredActivities = []
+        for i in activities:
+            if i["transportation_mode"] == "walk" and datetime.datetime.strptime(str(i["start_date_time"]), "%Y-%m-%d %H:%M:%S").year == 2008:
+                filteredActivities.append(i)
+        
+        print(tabulate(filteredActivities, headers="keys"))
+
+        trackpoints = []
+        counter = 1
+        # for i in filteredActivities:
+        #     print(counter+1)
+        #     doc = list(self.db.TrackPoint.find({"activity_id" : ObjectId(i["_id"])})) #dette tar utrolig lang tid?
+        #     trackpoints.append(doc)
+        testTP = list(self.db.TrackPoint.find({"activity_id" : ObjectId("634ecf1ebebb6adde0b6086a")}))
+        print(testTP)
+        #print(trackpoints)
+        print(tabulate(trackpoints, headers="keys"))
+
+        #fra forrige gang
+        # totalDistance = 0
+        # for trackpoint in range(0, len(result)-1):
+        #     fromLoc = (result[trackpoint][0], result[trackpoint][1])
+        #     toLoc = (result[trackpoint + 1][0], result[trackpoint + 1][1])
+        #     totalDistance += haversine(fromLoc, toLoc) 
+        # print("User with id=112 walked", round(totalDistance), 'km in 2008')
+        
 
 def main():
     program = None
@@ -203,6 +235,7 @@ def main():
         program.task_1()
         program.task_3()
         program.task_4()
+        program.task_7()
         #program.insert_dataset()
         
     except Exception as e:
