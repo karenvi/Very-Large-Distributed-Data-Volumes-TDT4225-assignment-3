@@ -141,7 +141,7 @@ class Program:
                             activity_id = ObjectId()
                             activity = {
                                 "_id": activity_id,
-                                "transportation_mode": "NULL",
+                                "transportation_mode": None,
                                 "start_date_time": start_date_time,
                                 "end_date_time": end_date_time
                             }
@@ -153,7 +153,7 @@ class Program:
                         activity_id = ObjectId()
                         activity = {
                             "_id": activity_id,
-                            "transportation_mode": "NULL",
+                            "transportation_mode": None,
                             "start_date_time": start_date_time,
                             "end_date_time": end_date_time
                         }
