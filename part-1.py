@@ -1,4 +1,6 @@
-from pprint import pprint 
+from pprint import pprint
+import re
+from unittest import result 
 from DbConnector import DbConnector
 import pandas as pd
 import os
@@ -174,7 +176,7 @@ class Program:
 
         trackpointsTotal = self.db["TrackPoint"].count_documents(filter={})
         print("Number of trackpoints:", trackpointsTotal)
-        
+
 
     def task_3(self):
         print("\n---\n\nTASK 3: Find the top 20 users with the highest number of activities \n")
@@ -186,6 +188,12 @@ class Program:
         ])
         print(tabulate(top20, headers="keys"))
 
+    
+    def task_4(self):
+        print("\n---\n\nTASK 4: Find all users who have taken a taxi \n")
+        result = self.db.User.distinct("_id", {"activities.transportation_mode": "taxi"})
+        print("Users who have taken taxi:")
+        [print(i) for i in result]
 
 
 def main():
@@ -194,6 +202,7 @@ def main():
         program = Program()
         program.task_1()
         program.task_3()
+        program.task_4()
         #program.insert_dataset()
         
     except Exception as e:
