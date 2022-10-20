@@ -9,6 +9,8 @@ from bson.objectid import ObjectId
 import datetime
 from tqdm import tqdm
 from tabulate import tabulate
+from haversine import haversine
+
 
 
 class Program:
@@ -208,24 +210,32 @@ class Program:
         
         print(tabulate(filteredActivities, headers="keys"))
 
+
+        # Dette virker:
+        # testA = {'_id': ObjectId('634ecf1bbebb6adde0b5713d'), 'transportation_mode': 'walk', 'start_date_time': datetime.datetime(2008, 5, 16, 17, 7, 9), 'end_date_time': datetime.datetime(2008, 5, 16, 17, 24, 11)}
+        # testTP = list(self.db.TrackPoint.find({"activity_id" : ObjectId(testA["_id"])}))
+        # print(tabulate(testTP, headers="keys"))
+
         trackpoints = []
-        counter = 1
-        # for i in filteredActivities:
-        #     print(counter+1)
-        #     doc = list(self.db.TrackPoint.find({"activity_id" : ObjectId(i["_id"])})) #dette tar utrolig lang tid?
-        #     trackpoints.append(doc)
-        testTP = list(self.db.TrackPoint.find({"activity_id" : ObjectId("634ecf1ebebb6adde0b6086a")}))
-        print(testTP)
+        for i in filteredActivities[:3]:
+            tp = list(self.db.TrackPoint.find({"activity_id" : ObjectId(i["_id"])})) # men dette tar utrolig lang tid, får ikke testet hele
+            trackpoints.append(tp)
+        
         #print(trackpoints)
-        print(tabulate(trackpoints, headers="keys"))
+        #print(tabulate(trackpoints[0], headers="keys"))
 
         #fra forrige gang
-        # totalDistance = 0
-        # for trackpoint in range(0, len(result)-1):
-        #     fromLoc = (result[trackpoint][0], result[trackpoint][1])
-        #     toLoc = (result[trackpoint + 1][0], result[trackpoint + 1][1])
-        #     totalDistance += haversine(fromLoc, toLoc) 
-        # print("User with id=112 walked", round(totalDistance), 'km in 2008')
+        print(len(trackpoints))
+        totalDistance = 0
+        for trackpoint in range(0, len(trackpoints)-1):
+            print(trackpoint)
+            print(trackpoints[trackpoint][0]["lat"])
+            
+            # fromLoc = (trackpoints[trackpoint]["lat"], trackpoints[trackpoint]["lon"])
+            # toLoc = (trackpoints[trackpoint + 1]["lat"], trackpoints[trackpoint + 1]["lon"])
+            # totalDistance += haversine(fromLoc, toLoc) 
+        print("User with id=112 walked", round(totalDistance), 'km in 2008')
+        
         
 
 def main():
