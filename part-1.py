@@ -5,6 +5,7 @@ import os
 from decouple import config
 from bson.objectid import ObjectId
 from tqdm import tqdm
+from tabulate import tabulate
 
 
 class Program:
@@ -163,7 +164,7 @@ class Program:
             self.insert_user(user, user_has_labels, activities)
 
     def task_1(self):
-        print("\n TASK 1: Count the number of users, activities and trackpoints. \n")
+        print("TASK 1: Count the number of users, activities and trackpoints. \n")
         users = self.db["User"]
         usersTotal = users.count_documents(filter={})
         print("Number of users: ", usersTotal)
@@ -173,6 +174,18 @@ class Program:
 
         trackpointsTotal = self.db["TrackPoint"].count_documents(filter={})
         print("Number of trackpoints:", trackpointsTotal)
+        
+
+    def task_3(self):
+        print("\n---\n\nTASK 3: Find the top 20 users with the highest number of activities \n")
+        users = self.db["User"]
+        top20 = users.aggregate([
+            {"$project": {"Activities": {"$size":"$activities"}}},
+            {"$sort": {"Activities": -1}}, # -1 means descending order
+            {"$limit": 20}
+        ])
+        print(tabulate(top20, headers="keys"))
+
 
 
 def main():
@@ -180,6 +193,7 @@ def main():
     try:
         program = Program()
         program.task_1()
+        program.task_3()
         #program.insert_dataset()
         
     except Exception as e:
