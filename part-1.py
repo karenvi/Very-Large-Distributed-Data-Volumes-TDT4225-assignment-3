@@ -1,10 +1,11 @@
-from pprint import pprint
 from random import random 
 from unittest import result 
 from enum import unique
 import operator
 from pprint import pprint
 from tracemalloc import start 
+import operator
+from pprint import pprint 
 from DbConnector import DbConnector
 import pandas as pd
 import os
@@ -12,10 +13,10 @@ from decouple import config
 from bson.objectid import ObjectId
 import datetime
 from tqdm import tqdm
-from tabulate import tabulate
 from haversine import haversine
-
-
+from pprint import pprint
+from random import random 
+from tabulate import tabulate
 
 class Program:
 
@@ -336,6 +337,43 @@ class Program:
 
 
 
+    
+    def task_11(self):
+        print("\nTASK 11: Find all users who have registered transportation_mode and their most used transportation_mode\n")
+        user_collection = self.db["User"]
+        user_ids = list(user_collection.find({}))
+        users_and_transport = []
+        distinct_users = []
+        distinct_transport = []
+        transportChoiceOfUser = {}
+
+        for user in user_ids:
+            activities = user["activities"]
+            for activity in activities:
+                transportation_mode = activity["transportation_mode"]
+                if (transportation_mode != None):
+                    users_and_transport.append([user["_id"], transportation_mode])
+
+        for usersAndTransport in users_and_transport:
+            if (usersAndTransport[0] not in distinct_users):
+                distinct_users.append(usersAndTransport[0])
+            if (usersAndTransport[1] not in distinct_transport):
+                distinct_transport.append(usersAndTransport[1])
+        print("User id | Most used transportation mode")
+        for user in distinct_users:
+            for transport in distinct_transport:
+                transportChoiceOfUser[transport] = 0
+                for usersAndTransport in users_and_transport:
+                    if (transport == usersAndTransport[1] and user == usersAndTransport[0]):
+                        transportChoiceOfUser[transport] += 1
+            sorted_transportChoiceOfUser = sorted(transportChoiceOfUser.items(), key=operator.itemgetter(1), reverse=True)
+            # Problem description only asks for the user id and their most used mode
+            print(user, sorted_transportChoiceOfUser[0][0])
+            # print(user, sorted_transportChoiceOfUser[0][0], sorted_transportChoiceOfUser[0][1])
+            
+        
+    
+         
 
 def main():
     program = None
@@ -343,17 +381,13 @@ def main():
         program = Program()
         program.task_1()
         program.task_2()
-        program.task_5()
-        
         program.task_3()
+        program.task_5()
+        program.task_6()
         program.task_4()
         # program.task_7()
-        #program.insert_dataset()
-        # program.insert_dataset()
-        # program.insert_dataset()
         program.task_10()
-        # program.insert_dataset()
-        program.task_6()
+        program.task_11()
         
     except Exception as e:
         print("ERROR: Failed to use database:", e)
