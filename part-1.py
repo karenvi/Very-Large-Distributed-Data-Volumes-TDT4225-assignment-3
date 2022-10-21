@@ -201,34 +201,31 @@ class Program:
     def task_7(self):
         print("\n---\n\nTASK 7: Find the total distance (in km) walked in 2008, by user with id=112 \n")
         activities = list(self.db.User.find({"_id": "112"}))[0]["activities"]
-        #print(datetime.datetime.strptime("2008-05-16 17:07:09", "%Y-%m-%d %H:%M:%S").year) # to check date format is right
-
+        
+        # First filter through user 112's activities to only inlcude 2008 activities + activities with transportation mode "walk"
         filteredActivities = []
         for i in activities:
             if i["transportation_mode"] == "walk" and datetime.datetime.strptime(str(i["start_date_time"]), "%Y-%m-%d %H:%M:%S").year == 2008:
                 filteredActivities.append(i)
-        
-        #print(tabulate(filteredActivities, headers="keys"))
-        #print(len(filteredActivities))
 
+        # Then find all trackpoints for the filtered activities by matching the activity_id in the TrackPoint collection
+        # with each activity's _id in filteredActivities 
         trackpoints = []
-        for i in tqdm(filteredActivities): # this will take a long time; for testing reduce to e.g. filteredActivities[:3]
+        for i in tqdm(filteredActivities): # this will take some time; for testing behaviour reduce to e.g. filteredActivities[:3]
             tp = list(self.db.TrackPoint.find({"activity_id" : ObjectId(i["_id"])})) 
             trackpoints.append(tp)
         
         #print(trackpoints) # uncomment to view nested structure of trackpoints list
-        #print(tabulate(trackpoints[0], headers="keys")) 
 
         totalDistance = 0
         for i in range(0, len(trackpoints)-1): 
             # we currently need two for loops because the lat/lon values are nested at several levels in the trackpoints list
             for trackpoint in range(0, len(trackpoints[i])-1):
-                #print(trackpoints[i][trackpoint]["lat"])
                 fromLoc = (trackpoints[i][trackpoint]["lat"], trackpoints[i][trackpoint]["lon"])
                 toLoc = (trackpoints[i][trackpoint+1]["lat"], trackpoints[i][trackpoint+1]["lon"])
                 totalDistance += haversine(fromLoc, toLoc) 
 
-        print("User with id=112 walked", round(totalDistance), 'km in 2008')
+        print("\n User with id=112 walked", round(totalDistance), 'km in 2008')
         
         
 
