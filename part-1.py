@@ -190,9 +190,6 @@ class Program:
                 if (transport == transport_mode):
                     transport_modes_and_values[transport_mode] += 1
         
-        # if transport_modes_and_values["NULL"]:
-        #     transport_modes_and_values.pop("NULL")
-        
         for key, value in transport_modes_and_values.items():
             print(key + ": " + str(value))
 
