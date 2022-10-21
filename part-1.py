@@ -163,6 +163,16 @@ class Program:
                         self.insert_trackpoints(trackpoints)
             self.insert_user(user, user_has_labels, activities)
 
+    def task_2(self):
+        print("\nTASK 2: Find average number of activities per user.\n")
+        user_collection = self.db["User"]
+        count_users = user_collection.count_documents(filter={})
+        # Since the activities are in an array in the collection User we must use $unwind to deconstruct the array field
+        count_activities = user_collection.aggregate([
+            {"$unwind": "$activities"},
+            {"$count": "activities"}]).next()
+        print("The average number of activities per user is: " + str(count_activities["activities"] / count_users))
+
     def task_5(self):
         print("\nTASK 5: Find all types of transportation modes and count how many activities that are tagged with these transportation mode labels.\n")
         user_collection = self.db["User"]
@@ -175,7 +185,7 @@ class Program:
             activities_documents = user["activities"]
             for activity in activities_documents:
                 transportation_modes = activity["transportation_mode"]
-                if (transportation_modes != "NULL"):
+                if (transportation_modes != None):
                     all_transport.append(transportation_modes)
         
         for transport in all_transport:
@@ -193,13 +203,14 @@ class Program:
         for key, value in transport_modes_and_values.items():
             print(key + ": " + str(value))
 
-
 def main():
     program = None
     try:
         program = Program()
         # program.insert_dataset()
+        program.task_2()
         program.task_5()
+        
         
     except Exception as e:
         print("ERROR: Failed to use database:", e)
