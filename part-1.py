@@ -212,7 +212,7 @@ class Program:
         #print(len(filteredActivities))
 
         trackpoints = []
-        for i in filteredActivities: # this will take a long time; for testing reduce to e.g. filteredActivities[:3]
+        for i in tqdm(filteredActivities): # this will take a long time; for testing reduce to e.g. filteredActivities[:3]
             tp = list(self.db.TrackPoint.find({"activity_id" : ObjectId(i["_id"])})) 
             trackpoints.append(tp)
         
