@@ -204,15 +204,15 @@ class Program:
         
         # First filter through user 112's activities to only inlcude 2008 activities + activities with transportation mode "walk"
         filteredActivities = []
-        for i in activities:
-            if i["transportation_mode"] == "walk" and datetime.datetime.strptime(str(i["start_date_time"]), "%Y-%m-%d %H:%M:%S").year == 2008:
-                filteredActivities.append(i)
+        for activity in activities:
+            if (activity["transportation_mode"] == "walk" and datetime.datetime.strptime(str(activity["start_date_time"]), "%Y-%m-%d %H:%M:%S").year == 2008):
+                filteredActivities.append(activity)
 
         # Then find all trackpoints for the filtered activities by matching the activity_id in the TrackPoint collection
         # with each activity's _id in filteredActivities 
         trackpoints = []
-        for i in tqdm(filteredActivities): # this will take some time; for testing behaviour reduce to e.g. filteredActivities[:3]
-            tp = list(self.db.TrackPoint.find({"activity_id" : ObjectId(i["_id"])})) 
+        for activity in tqdm(filteredActivities): # this will take some time; for testing behaviour reduce to e.g. filteredActivities[:3]
+            tp = list(self.db.TrackPoint.find({"activity_id" : ObjectId(activity["_id"])})) 
             trackpoints.append(tp)
         
         #print(trackpoints) # uncomment to view nested structure of trackpoints list
