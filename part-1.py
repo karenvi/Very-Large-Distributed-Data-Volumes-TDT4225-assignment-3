@@ -1,6 +1,8 @@
 from pprint import pprint
 from random import random 
 from unittest import result 
+from enum import unique
+from pprint import pprint 
 from DbConnector import DbConnector
 import pandas as pd
 import os
@@ -266,6 +268,27 @@ class Program:
 
         print("\n User with id=112 walked", round(totalDistance), 'km in 2008')
         
+        
+    def task_10(self):
+        print("\nTASK 10: Find the users who have tracked an activity in the Forbidden City of Beijing.\n")
+        trackpoint_collection = self.db["TrackPoint"]
+        user_collection = self.db["User"]
+        # gte = greater than and lt = less than
+        trackpoints = list(trackpoint_collection.find({
+            "lat": {"$gte":39.915,"$lt":39.917},
+            "lon": {"$gte":116.396,"$lt":116.398}
+            }))
+
+        unique_ids = []
+        for i in range(0, len(trackpoints)):
+            if trackpoints[i]["activity_id"] not in unique_ids:
+                unique_ids.append(trackpoints[i]["activity_id"])
+
+        users_in_beijing = list(user_collection.find({'$or': [{ 'activities._id': unique_ids[0] }, { 'activities._id': unique_ids[1] }, { 'activities._id': unique_ids[2] }, { 'activities._id': unique_ids[3] }, { 'activities._id': unique_ids[4] }, { 'activities._id': unique_ids[5] }]}))
+
+        print("Users who have tracked an activity in the Forbidden City of Beijing:")
+        for item in users_in_beijing:
+            print(item["_id"])
 
 def main():
     program = None
@@ -280,6 +303,8 @@ def main():
         program.task_7()
         #program.insert_dataset()
         # program.insert_dataset()
+        # program.insert_dataset()
+        program.task_10()
         
     except Exception as e:
         print("ERROR: Failed to use database:", e)
