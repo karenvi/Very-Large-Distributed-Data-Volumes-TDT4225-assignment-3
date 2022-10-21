@@ -175,7 +175,7 @@ class Program:
             activities_documents = user["activities"]
             for activity in activities_documents:
                 transportation_modes = activity["transportation_mode"]
-                if (transportation_modes != None):
+                if (transportation_modes != "NULL"):
                     all_transport.append(transportation_modes)
         
         for transport in all_transport:
@@ -189,6 +189,9 @@ class Program:
             for transport_mode in distinct_transport:
                 if (transport == transport_mode):
                     transport_modes_and_values[transport_mode] += 1
+        
+        # if transport_modes_and_values["NULL"]:
+        #     transport_modes_and_values.pop("NULL")
         
         for key, value in transport_modes_and_values.items():
             print(key + ": " + str(value))
