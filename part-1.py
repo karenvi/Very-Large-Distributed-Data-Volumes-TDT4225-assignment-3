@@ -201,39 +201,33 @@ class Program:
     def task_7(self):
         print("\n---\n\nTASK 7: Find the total distance (in km) walked in 2008, by user with id=112 \n")
         activities = list(self.db.User.find({"_id": "112"}))[0]["activities"]
-        #print(datetime.datetime.strptime("2008-05-16 17:07:09", "%Y-%m-%d %H:%M:%S").year)
+        #print(datetime.datetime.strptime("2008-05-16 17:07:09", "%Y-%m-%d %H:%M:%S").year) # to check date format is right
 
         filteredActivities = []
         for i in activities:
             if i["transportation_mode"] == "walk" and datetime.datetime.strptime(str(i["start_date_time"]), "%Y-%m-%d %H:%M:%S").year == 2008:
                 filteredActivities.append(i)
         
-        print(tabulate(filteredActivities, headers="keys"))
-
-
-        # Dette virker:
-        # testA = {'_id': ObjectId('634ecf1bbebb6adde0b5713d'), 'transportation_mode': 'walk', 'start_date_time': datetime.datetime(2008, 5, 16, 17, 7, 9), 'end_date_time': datetime.datetime(2008, 5, 16, 17, 24, 11)}
-        # testTP = list(self.db.TrackPoint.find({"activity_id" : ObjectId(testA["_id"])}))
-        # print(tabulate(testTP, headers="keys"))
+        #print(tabulate(filteredActivities, headers="keys"))
+        #print(len(filteredActivities))
 
         trackpoints = []
-        for i in filteredActivities[:3]:
-            tp = list(self.db.TrackPoint.find({"activity_id" : ObjectId(i["_id"])})) # men dette tar utrolig lang tid, får ikke testet hele
+        for i in filteredActivities: # this will take a long time; for testing reduce to e.g. filteredActivities[:3]
+            tp = list(self.db.TrackPoint.find({"activity_id" : ObjectId(i["_id"])})) 
             trackpoints.append(tp)
         
-        #print(trackpoints)
-        #print(tabulate(trackpoints[0], headers="keys"))
+        #print(trackpoints) # uncomment to view nested structure of trackpoints list
+        #print(tabulate(trackpoints[0], headers="keys")) 
 
-        #fra forrige gang
-        print(len(trackpoints))
         totalDistance = 0
-        for trackpoint in range(0, len(trackpoints)-1):
-            print(trackpoint)
-            print(trackpoints[trackpoint][0]["lat"])
-            
-            # fromLoc = (trackpoints[trackpoint]["lat"], trackpoints[trackpoint]["lon"])
-            # toLoc = (trackpoints[trackpoint + 1]["lat"], trackpoints[trackpoint + 1]["lon"])
-            # totalDistance += haversine(fromLoc, toLoc) 
+        for i in range(0, len(trackpoints)-1): 
+            # we currently need two for loops because the lat/lon values are nested at several levels in the trackpoints list
+            for trackpoint in range(0, len(trackpoints[i])-1):
+                #print(trackpoints[i][trackpoint]["lat"])
+                fromLoc = (trackpoints[i][trackpoint]["lat"], trackpoints[i][trackpoint]["lon"])
+                toLoc = (trackpoints[i][trackpoint+1]["lat"], trackpoints[i][trackpoint+1]["lon"])
+                totalDistance += haversine(fromLoc, toLoc) 
+
         print("User with id=112 walked", round(totalDistance), 'km in 2008')
         
         
