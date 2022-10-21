@@ -161,13 +161,24 @@ class Program:
                         trackpoints = file.to_dict(orient='records')
                         self.insert_trackpoints(trackpoints)
             self.insert_user(user, user_has_labels, activities)
-         
+
+    def task_2(self):
+        print("\nTASK 2: Find average number of activities per user.\n")
+        user_collection = self.db["User"]
+        count_users = user_collection.count_documents(filter={})
+        # Since the activities are in an array in the collection User we must use $unwind to deconstruct the array field
+        count_activities = user_collection.aggregate([
+            {"$unwind": "$activities"},
+            {"$count": "activities"}]).next()
+        print("The average number of activities per user is: " + str(count_activities["activities"] / count_users))
+
 
 def main():
     program = None
     try:
         program = Program()
-        program.insert_dataset()
+        # program.insert_dataset()
+        program.task_2()
         
     except Exception as e:
         print("ERROR: Failed to use database:", e)
