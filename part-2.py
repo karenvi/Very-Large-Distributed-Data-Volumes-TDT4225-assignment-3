@@ -15,8 +15,12 @@ class Queries:
     def task_8(self):
         print("\n---\n\nTASK 8: Find the top 20 users who have gained the most altitude meters \n")
         user_collection = self.db["User"]
-        users = user_collection.find(no_cursor_timeout=True)
+        trackpoint_collection = self.db["TrackPoint"]
 
+        # Create index to significantly speed up read queries
+        trackpoint_collection.create_index([("activity_id", 1)])
+
+        users = user_collection.find()
         highest_altitude_users = []
 
         data = dict()
@@ -24,9 +28,8 @@ class Queries:
         for user in users:
             trackpoints = []
             for activity in tqdm(user["activities"]):
-                matching_trackpoints = self.db.TrackPoint.find({"activity_id" : ObjectId(activity["_id"])}, no_cursor_timeout=True)
+                matching_trackpoints = trackpoint_collection.find({"activity_id" : ObjectId(activity["_id"])})
                 trackpoints.append(list(matching_trackpoints))
-                matching_trackpoints.close()
 
             # Build a dictionary with user ID as key, containing trackpoints for the user
             data[user["_id"]] = trackpoints
@@ -34,7 +37,6 @@ class Queries:
 
         for user in data.items():
             gained_altitude = 0
-            print(user[0])
             for trackpoints in user[1]:
                 for i in range(0, len(trackpoints)-1):
                     previous_trackpoint = trackpoints[i]["alt"]
@@ -45,8 +47,6 @@ class Queries:
                         gained_altitude += (current_trackpoint - previous_trackpoint) * 0.0003048
 
             highest_altitude_users.append({"user": user[0], "total_meters_gained": gained_altitude})
-        
-        users.close()
 
         print("\nThe top 20 users who have gained the most altitude meters: \n")
         pprint(sorted(highest_altitude_users, key=lambda d: d['total_meters_gained'], reverse=True)[:20])
