@@ -15,11 +15,7 @@ class Queries:
     def task_8(self):
         print("\n---\n\nTASK 8: Find the top 20 users who have gained the most altitude meters \n")
         user_collection = self.db["User"]
-        #trackpoint_collection = self.db["TrackPoint"]
-
         users = user_collection.find(no_cursor_timeout=True)
-        #activities = list(user_collection.aggregate([{'$unwind': '$activities'}]))
-        #trackpoints = trackpoint_collection.find()
 
         highest_altitude_users = []
 
@@ -28,7 +24,9 @@ class Queries:
         for user in users:
             trackpoints = []
             for activity in tqdm(user["activities"]):
-                trackpoints.append(list(self.db.TrackPoint.find({"activity_id" : ObjectId(activity["_id"])})))
+                matching_trackpoints = self.db.TrackPoint.find({"activity_id" : ObjectId(activity["_id"])}, no_cursor_timeout=True)
+                trackpoints.append(list(matching_trackpoints))
+                matching_trackpoints.close()
 
             # Build a dictionary with user ID as key, containing trackpoints for the user
             data[user["_id"]] = trackpoints
