@@ -16,50 +16,6 @@ class Queries:
         self.client = self.connection.client
         self.db = self.connection.db
     
-    def task_9(self):
-        print("\n---\n\nTASK 9: Find all users who have invalid activities, and the number of invalid activities per user \n")
-        user_collection = self.db["User"]
-        trackpoint_collection = self.db["TrackPoint"]
-
-        # Create index to significantly speed up read queries
-        trackpoint_collection.create_index([("activity_id", 1)])
-
-        users = user_collection.find()
-        users_with_invalid_activities = []
-
-        data = dict()
-
-        for user in users:
-            trackpoints = []
-            for activity in tqdm(user["activities"]):
-                matching_trackpoints = trackpoint_collection.find({"activity_id" : ObjectId(activity["_id"])})
-                trackpoints.append(list(matching_trackpoints))
-
-            # Build a dictionary with user ID as key, containing trackpoints for the user
-            data[user["_id"]] = trackpoints
-
-
-        for user in data.items():
-            num_invalid_activities = 0
-            for trackpoints in user[1]:
-                for i in range(0, len(trackpoints)-1):
-                    previous_trackpoint = trackpoints[i]["date_time"]
-                    current_trackpoint = trackpoints[i+1]["date_time"]
-
-                    time_diff = (current_trackpoint - previous_trackpoint).total_seconds()
-
-                    # 5 minute deviation
-                    if (time_diff >= 300.0):
-                        num_invalid_activities += 1
-                        # Do not need to check the rest of the trackpoints
-                        break
-
-            if (num_invalid_activities != 0):
-                users_with_invalid_activities.append({"user": user[0], "invalid_activities": num_invalid_activities})
-
-        print("\nAll users who have invalid activities, and the number of invalid activities per user: \n")
-        pprint(sorted(users_with_invalid_activities, key=lambda d: d['user']))
-    
     def task_1(self):
         print("\n---\n\nTASK 1: Count the number of users, activities and trackpoints. \n")
         users = self.db["User"]
@@ -203,65 +159,147 @@ class Queries:
                 totalDistance += haversine(fromLoc, toLoc) 
 
         print("\nUser with id=112 walked", round(totalDistance), 'km in 2008')
-        
-        
-    def task_10(self):
-        print("\n---\n\nTASK 10: Find the users who have tracked an activity in the Forbidden City of Beijing.\n")
+
+    def task_8(self):
+        print("\n---\n\nTASK 8: Find the top 20 users who have gained the most altitude meters \n")
+
+        user_collection = self.db["User"]
         trackpoint_collection = self.db["TrackPoint"]
-        user_collection = self.db["User"]
-        # gte = greater than and lt = less than
-        trackpoints = list(trackpoint_collection.find({
-            "lat": {"$gte":39.915,"$lt":39.917},
-            "lon": {"$gte":116.396,"$lt":116.398}
-            }))
 
-        unique_ids = []
-        for i in range(0, len(trackpoints)):
-            if trackpoints[i]["activity_id"] not in unique_ids:
-                unique_ids.append(trackpoints[i]["activity_id"])
+        # Create index to significantly speed up read queries
+        trackpoint_collection.create_index([("activity_id", 1)])
 
-        users_in_beijing = list(user_collection.find({'$or': [{ 'activities._id': unique_ids[0] }, { 'activities._id': unique_ids[1] }, { 'activities._id': unique_ids[2] }, { 'activities._id': unique_ids[3] }, { 'activities._id': unique_ids[4] }, { 'activities._id': unique_ids[5] }]}))
+        users = user_collection.find()
+        highest_altitude_users = []
 
-        print("Users who have tracked an activity in the Forbidden City of Beijing:")
-        for item in users_in_beijing:
-            print(item["_id"])
+        data = dict()
+
+        for user in users:
+            trackpoints = []
+            for activity in tqdm(user["activities"]):
+                matching_trackpoints = trackpoint_collection.find({"activity_id" : ObjectId(activity["_id"])})
+                trackpoints.append(list(matching_trackpoints))
+
+            # Build a dictionary with user ID as key, containing trackpoints for the user
+            data[user["_id"]] = trackpoints
+
+        for user in data.items():
+            gained_altitude = 0
+            for trackpoints in user[1]:
+                for i in range(0, len(trackpoints)-1):
+                    previous_trackpoint = trackpoints[i]["alt"]
+                    current_trackpoint = trackpoints[i+1]["alt"]
+
+                    if (current_trackpoint != -777 and current_trackpoint > previous_trackpoint):
+                        # Convert from feet to meters
+                        gained_altitude += (current_trackpoint - previous_trackpoint) * 0.0003048
+
+            highest_altitude_users.append({"user": user[0], "total_meters_gained": gained_altitude})
+
+        print("\nThe top 20 users who have gained the most altitude meters: \n")
+        pprint(sorted(highest_altitude_users, key=lambda d: d['total_meters_gained'], reverse=True)[:20])
+
+def task_9(self):
+    print("\n---\n\nTASK 9: Find all users who have invalid activities, and the number of invalid activities per user \n")
+    user_collection = self.db["User"]
+    trackpoint_collection = self.db["TrackPoint"]
+
+    # Create index to significantly speed up read queries
+    trackpoint_collection.create_index([("activity_id", 1)])
+
+    users = user_collection.find()
+    users_with_invalid_activities = []
+
+    data = dict()
+
+    for user in users:
+        trackpoints = []
+        for activity in tqdm(user["activities"]):
+            matching_trackpoints = trackpoint_collection.find({"activity_id" : ObjectId(activity["_id"])})
+            trackpoints.append(list(matching_trackpoints))
+
+        # Build a dictionary with user ID as key, containing trackpoints for the user
+        data[user["_id"]] = trackpoints
+
+    for user in data.items():
+        num_invalid_activities = 0
+        for trackpoints in user[1]:
+            for i in range(0, len(trackpoints)-1):
+                previous_trackpoint = trackpoints[i]["date_time"]
+                current_trackpoint = trackpoints[i+1]["date_time"]
+
+                time_diff = (current_trackpoint - previous_trackpoint).total_seconds()
+
+                # 5 minute deviation
+                if (time_diff >= 300.0):
+                    num_invalid_activities += 1
+                    # Do not need to check the rest of the trackpoints
+                    break
+
+        if (num_invalid_activities != 0):
+            users_with_invalid_activities.append({"user": user[0], "invalid_activities": num_invalid_activities})
+
+    print("\nAll users who have invalid activities, and the number of invalid activities per user: \n")
+    pprint(sorted(users_with_invalid_activities, key=lambda d: d['user']))
+    
+        
+def task_10(self):
+    print("\n---\n\nTASK 10: Find the users who have tracked an activity in the Forbidden City of Beijing.\n")
+    trackpoint_collection = self.db["TrackPoint"]
+    user_collection = self.db["User"]
+    # gte = greater than and lt = less than
+    trackpoints = list(trackpoint_collection.find({
+        "lat": {"$gte":39.915,"$lt":39.917},
+        "lon": {"$gte":116.396,"$lt":116.398}
+        }))
+
+    unique_ids = []
+    for i in range(0, len(trackpoints)):
+        if trackpoints[i]["activity_id"] not in unique_ids:
+            unique_ids.append(trackpoints[i]["activity_id"])
+
+    users_in_beijing = list(user_collection.find({'$or': [{ 'activities._id': unique_ids[0] }, { 'activities._id': unique_ids[1] }, { 'activities._id': unique_ids[2] }, { 'activities._id': unique_ids[3] }, { 'activities._id': unique_ids[4] }, { 'activities._id': unique_ids[5] }]}))
+
+    print("Users who have tracked an activity in the Forbidden City of Beijing:")
+    for item in users_in_beijing:
+        print(item["_id"])
             
     
     
-    def task_11(self):
-        print("\nTASK 11: Find all users who have registered transportation_mode and their most used transportation_mode\n")
-        user_collection = self.db["User"]
-        user_ids = list(user_collection.find({}))
-        users_and_transport = []
-        distinct_users = []
-        distinct_transport = []
-        transportChoiceOfUser = {}
+def task_11(self):
+    print("\nTASK 11: Find all users who have registered transportation_mode and their most used transportation_mode\n")
+    user_collection = self.db["User"]
+    user_ids = list(user_collection.find({}))
+    users_and_transport = []
+    distinct_users = []
+    distinct_transport = []
+    transportChoiceOfUser = {}
 
-        for user in user_ids:
-            activities = user["activities"]
-            for activity in activities:
-                transportation_mode = activity["transportation_mode"]
-                if (transportation_mode != None):
-                    users_and_transport.append([user["_id"], transportation_mode])
+    for user in user_ids:
+        activities = user["activities"]
+        for activity in activities:
+            transportation_mode = activity["transportation_mode"]
+            if (transportation_mode != None):
+                users_and_transport.append([user["_id"], transportation_mode])
 
-        for usersAndTransport in users_and_transport:
-            if (usersAndTransport[0] not in distinct_users):
-                distinct_users.append(usersAndTransport[0])
-            if (usersAndTransport[1] not in distinct_transport):
-                distinct_transport.append(usersAndTransport[1])
-        print("User id | Most used transportation mode")
-        for user in distinct_users:
-            for transport in distinct_transport:
-                transportChoiceOfUser[transport] = 0
-                for usersAndTransport in users_and_transport:
-                    if (transport == usersAndTransport[1] and user == usersAndTransport[0]):
-                        transportChoiceOfUser[transport] += 1
-            sorted_transportChoiceOfUser = sorted(transportChoiceOfUser.items(), key=operator.itemgetter(1), reverse=True)
-            # Problem description only asks for the user id and their most used mode
-            print(user, sorted_transportChoiceOfUser[0][0])
-            # print(user, sorted_transportChoiceOfUser[0][0], sorted_transportChoiceOfUser[0][1])
-            
-    
+    for usersAndTransport in users_and_transport:
+        if (usersAndTransport[0] not in distinct_users):
+            distinct_users.append(usersAndTransport[0])
+        if (usersAndTransport[1] not in distinct_transport):
+            distinct_transport.append(usersAndTransport[1])
+    print("User id | Most used transportation mode")
+    for user in distinct_users:
+        for transport in distinct_transport:
+            transportChoiceOfUser[transport] = 0
+            for usersAndTransport in users_and_transport:
+                if (transport == usersAndTransport[1] and user == usersAndTransport[0]):
+                    transportChoiceOfUser[transport] += 1
+        sorted_transportChoiceOfUser = sorted(transportChoiceOfUser.items(), key=operator.itemgetter(1), reverse=True)
+        # Problem description only asks for the user id and their most used mode
+        print(user, sorted_transportChoiceOfUser[0][0])
+        # print(user, sorted_transportChoiceOfUser[0][0], sorted_transportChoiceOfUser[0][1])
+        
+
 
 def main():
     queries = None
@@ -275,6 +313,7 @@ def main():
         queries.task_5()
         queries.task_6()
         queries.task_7()
+        queries.task_8()
         queries.task_9()
         queries.task_10()
         queries.task_11()
