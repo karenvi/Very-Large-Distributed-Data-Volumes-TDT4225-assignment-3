@@ -1,17 +1,12 @@
 from pprint import pprint
-import re
-from unittest import result 
+from pprint import pprint 
 from DbConnector import DbConnector
 import pandas as pd
 import os
 from decouple import config
 from bson.objectid import ObjectId
-import datetime
 from tqdm import tqdm
-from tabulate import tabulate
-from haversine import haversine
-
-
+from pprint import pprint
 
 class Program:
 
@@ -169,102 +164,16 @@ class Program:
             self.insert_user(user, user_has_labels, activities)
 
 
-    def task_1(self):
-        print("TASK 1: Count the number of users, activities and trackpoints. \n")
-        users = self.db["User"]
-        usersTotal = users.count_documents(filter={})
-        print("Number of users: ", usersTotal)
-
-        activitiesTotal = users.aggregate([{"$unwind": "$activities"},{"$count": "activities"}]).next()
-        print("Number of activities:", list(activitiesTotal.values()).pop())
-
-        trackpointsTotal = self.db["TrackPoint"].count_documents(filter={})
-        print("Number of trackpoints:", trackpointsTotal)
-        
-    
-    def task_2(self):
-        print("\n---\n\nTASK 2: Find average number of activities per user.\n")
-        user_collection = self.db["User"]
-        count_users = user_collection.count_documents(filter={})
-        # Since the activities are in an array in the collection User we must use $unwind to deconstruct the array field
-        count_activities = user_collection.aggregate([
-            {"$unwind": "$activities"},
-            {"$count": "activities"}]).next()
-        print("The average number of activities per user is: " + str(count_activities["activities"] / count_users))
-
-
-    def task_3(self):
-        print("\n---\n\nTASK 3: Find the top 20 users with the highest number of activities \n")
-        users = self.db["User"]
-        top20 = users.aggregate([
-            {"$project": {"Activities": {"$size":"$activities"}}},
-            {"$sort": {"Activities": -1}}, # -1 means descending order
-            {"$limit": 20}
-        ])
-        print(tabulate(top20, headers="keys"))
-
-    
-    def task_4(self):
-        print("\n---\n\nTASK 4: Find all users who have taken a taxi \n")
-        result = self.db.User.distinct("_id", {"activities.transportation_mode": "taxi"})
-        print("Users who have taken taxi:")
-        [print(i) for i in result]
-
-
-    def task_7(self):
-        print("\n---\n\nTASK 7: Find the total distance (in km) walked in 2008, by user with id=112 \n")
-        activities = list(self.db.User.find({"_id": "112"}))[0]["activities"]
-        
-        # First filter through user 112's activities to only inlcude 2008 activities + activities with transportation mode "walk"
-        filteredActivities = []
-        for activity in activities:
-            if (activity["transportation_mode"] == "walk" and datetime.datetime.strptime(str(activity["start_date_time"]), "%Y-%m-%d %H:%M:%S").year == 2008):
-                filteredActivities.append(activity)
-
-        # Create index to speed up read queries
-        trackpointCollection = self.db["TrackPoint"]
-        trackpointCollection.create_index([("activity_id", 1)])
-
-        # Then find all trackpoints for the filtered activities by matching the activity_id in the TrackPoint collection
-        # with each activity's _id in filteredActivities 
-        matchedTrackpoints = []
-        
-        for activity in filteredActivities: 
-            tp = list(trackpointCollection.find({"activity_id" : ObjectId(activity["_id"])})) 
-            matchedTrackpoints.append(tp)
-        
-        #print(matchedTrackpoints) # uncomment to view nested structure of matchedTrackpoints list
-
-        totalDistance = 0
-        for i in range(0, len(matchedTrackpoints)-1): 
-            # we currently need two for loops because the lat/lon values are nested at several levels in the matchedTrackpoints list
-            for trackpoint in range(0, len(matchedTrackpoints[i])-1):
-                fromLoc = (matchedTrackpoints[i][trackpoint]["lat"], matchedTrackpoints[i][trackpoint]["lon"])
-                toLoc = (matchedTrackpoints[i][trackpoint+1]["lat"], matchedTrackpoints[i][trackpoint+1]["lon"])
-                totalDistance += haversine(fromLoc, toLoc) 
-
-        print("\nUser with id=112 walked", round(totalDistance), 'km in 2008')
-        
-
 def main():
     program = None
     try:
         program = Program()
-        program.task_1()
-        program.task_2()
-        program.task_3()
-        program.task_4()
-        program.task_7()
-        #program.insert_dataset()
-        # program.insert_dataset()
-        
+        program.insert_dataset()
     except Exception as e:
         print("ERROR: Failed to use database:", e)
-        
     finally:
         if program:
             program.connection.close_connection()
-
 
 if __name__ == '__main__':
     main()
