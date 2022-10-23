@@ -267,7 +267,7 @@ class Queries:
         
         
     def task_11(self):
-        print("\nTASK 11: Find all users who have registered transportation_mode and their most used transportation_mode\n")
+        print("\n---\n\nTASK 11: Find all users who have registered transportation_mode and their most used transportation_mode\n")
         user_collection = self.db["User"]
         user_ids = list(user_collection.find({}))
         users_and_transport = []
