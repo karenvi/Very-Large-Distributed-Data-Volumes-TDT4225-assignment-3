@@ -1,8 +1,4 @@
-from random import random 
-from unittest import result 
-from enum import unique
 from pprint import pprint
-from tracemalloc import start 
 from pprint import pprint 
 from DbConnector import DbConnector
 import pandas as pd
@@ -10,10 +6,7 @@ import os
 from decouple import config
 from bson.objectid import ObjectId
 from tqdm import tqdm
-from haversine import haversine
 from pprint import pprint
-from random import random 
-from tabulate import tabulate
 
 class Program:
 
@@ -170,9 +163,6 @@ class Program:
                         self.insert_trackpoints(trackpoints)
             self.insert_user(user, user_has_labels, activities)
 
-    
-    
-         
 
 def main():
     program = None
@@ -181,11 +171,9 @@ def main():
         program.insert_dataset()
     except Exception as e:
         print("ERROR: Failed to use database:", e)
-        
     finally:
         if program:
             program.connection.close_connection()
-
 
 if __name__ == '__main__':
     main()

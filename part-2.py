@@ -1,10 +1,6 @@
 from pprint import pprint 
 from DbConnector import DbConnector
-import pandas as pd
-import os
-from decouple import config
 from bson.objectid import ObjectId
-from tqdm import tqdm
 from tabulate import tabulate
 import operator
 import datetime
@@ -147,8 +143,6 @@ class Queries:
         for activity in filteredActivities: 
             tp = list(trackpointCollection.find({"activity_id" : ObjectId(activity["_id"])})) 
             matchedTrackpoints.append(tp)
-        
-        #print(matchedTrackpoints) # uncomment to view nested structure of matchedTrackpoints list
 
         totalDistance = 0
         for i in range(0, len(matchedTrackpoints)-1): 
@@ -176,7 +170,7 @@ class Queries:
 
         for user in users:
             trackpoints = []
-            for activity in tqdm(user["activities"]):
+            for activity in user["activities"]:
                 matching_trackpoints = trackpoint_collection.find({"activity_id" : ObjectId(activity["_id"])})
                 trackpoints.append(list(matching_trackpoints))
 
@@ -214,7 +208,7 @@ class Queries:
 
         for user in users:
             trackpoints = []
-            for activity in tqdm(user["activities"]):
+            for activity in user["activities"]:
                 matching_trackpoints = trackpoint_collection.find({"activity_id" : ObjectId(activity["_id"])})
                 trackpoints.append(list(matching_trackpoints))
 
@@ -297,8 +291,6 @@ class Queries:
             sorted_transportChoiceOfUser = sorted(transportChoiceOfUser.items(), key=operator.itemgetter(1), reverse=True)
             # Problem description only asks for the user id and their most used mode
             print(user, sorted_transportChoiceOfUser[0][0])
-            # print(user, sorted_transportChoiceOfUser[0][0], sorted_transportChoiceOfUser[0][1])
-            
 
 
 def main():
