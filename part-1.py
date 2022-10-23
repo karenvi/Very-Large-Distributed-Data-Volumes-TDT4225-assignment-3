@@ -1,17 +1,14 @@
 from random import random 
 from unittest import result 
 from enum import unique
-import operator
 from pprint import pprint
 from tracemalloc import start 
-import operator
 from pprint import pprint 
 from DbConnector import DbConnector
 import pandas as pd
 import os
 from decouple import config
 from bson.objectid import ObjectId
-import datetime
 from tqdm import tqdm
 from haversine import haversine
 from pprint import pprint
@@ -173,213 +170,7 @@ class Program:
                         self.insert_trackpoints(trackpoints)
             self.insert_user(user, user_has_labels, activities)
 
-
-    def task_1(self):
-        print("\n---\n\nTASK 1: Count the number of users, activities and trackpoints. \n")
-        users = self.db["User"]
-        usersTotal = users.count_documents(filter={})
-        print("Number of users: ", usersTotal)
-
-        activitiesTotal = users.aggregate([{"$unwind": "$activities"},{"$count": "activities"}]).next()
-        print("Number of activities:", list(activitiesTotal.values()).pop())
-
-        trackpointsTotal = self.db["TrackPoint"].count_documents(filter={})
-        print("Number of trackpoints:", trackpointsTotal)
-        
     
-    def task_2(self):
-        print("\n---\n\nTASK 2: Find average number of activities per user.\n")
-        user_collection = self.db["User"]
-        count_users = user_collection.count_documents(filter={})
-        # Since the activities are in an array in the collection User we must use $unwind to deconstruct the array field
-        count_activities = user_collection.aggregate([
-            {"$unwind": "$activities"},
-            {"$count": "activities"}]).next()
-        print("The average number of activities per user is: " + str(count_activities["activities"] / count_users))
-
-    def task_5(self):
-        print("\n---\n\nTASK 5: Find all types of transportation modes and count how many activities that are tagged with these transportation mode labels.\n")
-        user_collection = self.db["User"]
-        user_ids = list(user_collection.find({}))
-        all_transport = []
-        distinct_transport = []
-        transport_modes_and_values = {}
-
-        for user in user_ids:
-            activities_documents = user["activities"]
-            for activity in activities_documents:
-                transportation_modes = activity["transportation_mode"]
-                if (transportation_modes != None):
-                    all_transport.append(transportation_modes)
-        
-        for transport in all_transport:
-            if (transport not in distinct_transport):
-                distinct_transport.append(transport)
-        
-        for transport in distinct_transport:
-            transport_modes_and_values[transport] = 0
-        
-        for transport in all_transport:
-            for transport_mode in distinct_transport:
-                if (transport == transport_mode):
-                    transport_modes_and_values[transport_mode] += 1
-        
-        for key, value in transport_modes_and_values.items():
-            print(key + ": " + str(value))
-
-    def task_3(self):
-        print("\n---\n\nTASK 3: Find the top 20 users with the highest number of activities \n")
-        users = self.db["User"]
-        top20 = users.aggregate([
-            {"$project": {"Activities": {"$size":"$activities"}}},
-            {"$sort": {"Activities": -1}}, # -1 means descending order
-            {"$limit": 20}
-        ])
-        print(tabulate(top20, headers="keys"))
-
-    
-    def task_4(self):
-        print("\n---\n\nTASK 4: Find all users who have taken a taxi \n")
-        result = self.db.User.distinct("_id", {"activities.transportation_mode": "taxi"})
-        print("Users who have taken taxi:")
-        [print(i) for i in result]
-
-
-    def task_7(self):
-        print("\n---\n\nTASK 7: Find the total distance (in km) walked in 2008, by user with id=112 \n")
-        activities = list(self.db.User.find({"_id": "112"}))[0]["activities"]
-        
-        # First filter through user 112's activities to only inlcude 2008 activities + activities with transportation mode "walk"
-        filteredActivities = []
-        for activity in activities:
-            if (activity["transportation_mode"] == "walk" and datetime.datetime.strptime(str(activity["start_date_time"]), "%Y-%m-%d %H:%M:%S").year == 2008):
-                filteredActivities.append(activity)
-
-        # Create index to speed up read queries
-        trackpointCollection = self.db["TrackPoint"]
-        trackpointCollection.create_index([("activity_id", 1)])
-
-        # Then find all trackpoints for the filtered activities by matching the activity_id in the TrackPoint collection
-        # with each activity's _id in filteredActivities 
-        matchedTrackpoints = []
-        
-        for activity in filteredActivities: 
-            tp = list(trackpointCollection.find({"activity_id" : ObjectId(activity["_id"])})) 
-            matchedTrackpoints.append(tp)
-        
-        #print(matchedTrackpoints) # uncomment to view nested structure of matchedTrackpoints list
-
-        totalDistance = 0
-        for i in range(0, len(matchedTrackpoints)-1): 
-            # we currently need two for loops because the lat/lon values are nested at several levels in the matchedTrackpoints list
-            for trackpoint in range(0, len(matchedTrackpoints[i])-1):
-                fromLoc = (matchedTrackpoints[i][trackpoint]["lat"], matchedTrackpoints[i][trackpoint]["lon"])
-                toLoc = (matchedTrackpoints[i][trackpoint+1]["lat"], matchedTrackpoints[i][trackpoint+1]["lon"])
-                totalDistance += haversine(fromLoc, toLoc) 
-
-        print("\nUser with id=112 walked", round(totalDistance), 'km in 2008')
-        
-        
-    def task_10(self):
-        print("\n---\n\nTASK 10: Find the users who have tracked an activity in the Forbidden City of Beijing.\n")
-        trackpoint_collection = self.db["TrackPoint"]
-        user_collection = self.db["User"]
-        # gte = greater than and lt = less than
-        trackpoints = list(trackpoint_collection.find({
-            "lat": {"$gte":39.915,"$lt":39.917},
-            "lon": {"$gte":116.396,"$lt":116.398}
-            }))
-
-        unique_ids = []
-        for i in range(0, len(trackpoints)):
-            if trackpoints[i]["activity_id"] not in unique_ids:
-                unique_ids.append(trackpoints[i]["activity_id"])
-
-        users_in_beijing = list(user_collection.find({'$or': [{ 'activities._id': unique_ids[0] }, { 'activities._id': unique_ids[1] }, { 'activities._id': unique_ids[2] }, { 'activities._id': unique_ids[3] }, { 'activities._id': unique_ids[4] }, { 'activities._id': unique_ids[5] }]}))
-
-        print("Users who have tracked an activity in the Forbidden City of Beijing:")
-        for item in users_in_beijing:
-            print(item["_id"])
-            
-    def task_6(self):
-        print("\n---\n\nTASK 6a: Find the year with the most activities. \n")
-        user_collection = self.db["User"]
-        user_list = list(user_collection.aggregate([{
-            '$unwind': '$activities'
-            }]))
-        all_years = []
-        distinct_years = []
-        count_activities_per_year = {}
-        count_hours_per_year = {}
-
-        # Basically doing the same as in task 5
-        for user in user_list:
-            actitivity_docs = user["activities"]
-            end_year = str(actitivity_docs["end_date_time"])
-            all_years.append(end_year.split("-")[0])
-
-        for year in all_years:
-            if (year not in distinct_years):
-                distinct_years.append(year)
-                count_activities_per_year[year] = 0
-                count_hours_per_year[year] = 0
-            for uniqueYear in distinct_years:
-                if (year == uniqueYear):
-                    count_activities_per_year[uniqueYear] += 1
-        
-        sorted_dict_year = sorted(count_activities_per_year.items(), key=operator.itemgetter(1), reverse=True)
-        print("Most activities registered in " + sorted_dict_year[0][0] + " with a total of " + str(sorted_dict_year[0][1]) + " activities!")
-
-        print("\nTASK 6b: Is this also the year with most recorded hours?\n")
-        for user in user_list:
-            actitivity_docs = user["activities"]
-            start_date = actitivity_docs["start_date_time"]
-            end_date = actitivity_docs["end_date_time"]
-            only_year = str(start_date).split("-")[0]
-            hours = (end_date - start_date).seconds
-            count_hours_per_year[only_year] += round(hours / 3600)
-        
-        sorted_hours = sorted(count_hours_per_year.items(), key=operator.itemgetter(1), reverse=True)
-        print("No, " + sorted_hours[0][0] + " is the year with the most recorded hours. It has " + str(sorted_hours[0][1]) + " hours recorded.")
-            
-
-
-
-    
-    def task_11(self):
-        print("\nTASK 11: Find all users who have registered transportation_mode and their most used transportation_mode\n")
-        user_collection = self.db["User"]
-        user_ids = list(user_collection.find({}))
-        users_and_transport = []
-        distinct_users = []
-        distinct_transport = []
-        transportChoiceOfUser = {}
-
-        for user in user_ids:
-            activities = user["activities"]
-            for activity in activities:
-                transportation_mode = activity["transportation_mode"]
-                if (transportation_mode != None):
-                    users_and_transport.append([user["_id"], transportation_mode])
-
-        for usersAndTransport in users_and_transport:
-            if (usersAndTransport[0] not in distinct_users):
-                distinct_users.append(usersAndTransport[0])
-            if (usersAndTransport[1] not in distinct_transport):
-                distinct_transport.append(usersAndTransport[1])
-        print("User id | Most used transportation mode")
-        for user in distinct_users:
-            for transport in distinct_transport:
-                transportChoiceOfUser[transport] = 0
-                for usersAndTransport in users_and_transport:
-                    if (transport == usersAndTransport[1] and user == usersAndTransport[0]):
-                        transportChoiceOfUser[transport] += 1
-            sorted_transportChoiceOfUser = sorted(transportChoiceOfUser.items(), key=operator.itemgetter(1), reverse=True)
-            # Problem description only asks for the user id and their most used mode
-            print(user, sorted_transportChoiceOfUser[0][0])
-            # print(user, sorted_transportChoiceOfUser[0][0], sorted_transportChoiceOfUser[0][1])
-            
-        
     
          
 
@@ -387,16 +178,7 @@ def main():
     program = None
     try:
         program = Program()
-        program.task_1()
-        program.task_2()
-        program.task_3()
-        program.task_5()
-        program.task_6()
-        program.task_4()
-        # program.task_7()
-        program.task_10()
-        program.task_11()
-        
+        program.insert_dataset()
     except Exception as e:
         print("ERROR: Failed to use database:", e)
         
