@@ -173,6 +173,7 @@ class Program:
                         self.insert_trackpoints(trackpoints)
             self.insert_user(user, user_has_labels, activities)
 
+
     def task_1(self):
         print("\n---\n\nTASK 1: Count the number of users, activities and trackpoints. \n")
         users = self.db["User"]
@@ -184,6 +185,7 @@ class Program:
 
         trackpointsTotal = self.db["TrackPoint"].count_documents(filter={})
         print("Number of trackpoints:", trackpointsTotal)
+        
     
     def task_2(self):
         print("\n---\n\nTASK 2: Find average number of activities per user.\n")
@@ -242,6 +244,7 @@ class Program:
         print("Users who have taken taxi:")
         [print(i) for i in result]
 
+
     def task_7(self):
         print("\n---\n\nTASK 7: Find the total distance (in km) walked in 2008, by user with id=112 \n")
         activities = list(self.db.User.find({"_id": "112"}))[0]["activities"]
@@ -252,24 +255,29 @@ class Program:
             if (activity["transportation_mode"] == "walk" and datetime.datetime.strptime(str(activity["start_date_time"]), "%Y-%m-%d %H:%M:%S").year == 2008):
                 filteredActivities.append(activity)
 
+        # Create index to speed up read queries
+        trackpointCollection = self.db["TrackPoint"]
+        trackpointCollection.create_index([("activity_id", 1)])
+
         # Then find all trackpoints for the filtered activities by matching the activity_id in the TrackPoint collection
         # with each activity's _id in filteredActivities 
-        trackpoints = []
-        for activity in tqdm(filteredActivities): # this will take some time; for testing behaviour reduce to e.g. filteredActivities[:3]
-            tp = list(self.db.TrackPoint.find({"activity_id" : ObjectId(activity["_id"])})) 
-            trackpoints.append(tp)
+        matchedTrackpoints = []
         
-        #print(trackpoints) # uncomment to view nested structure of trackpoints list
+        for activity in filteredActivities: 
+            tp = list(trackpointCollection.find({"activity_id" : ObjectId(activity["_id"])})) 
+            matchedTrackpoints.append(tp)
+        
+        #print(matchedTrackpoints) # uncomment to view nested structure of matchedTrackpoints list
 
         totalDistance = 0
-        for i in range(0, len(trackpoints)-1): 
-            # we currently need two for loops because the lat/lon values are nested at several levels in the trackpoints list
-            for trackpoint in range(0, len(trackpoints[i])-1):
-                fromLoc = (trackpoints[i][trackpoint]["lat"], trackpoints[i][trackpoint]["lon"])
-                toLoc = (trackpoints[i][trackpoint+1]["lat"], trackpoints[i][trackpoint+1]["lon"])
+        for i in range(0, len(matchedTrackpoints)-1): 
+            # we currently need two for loops because the lat/lon values are nested at several levels in the matchedTrackpoints list
+            for trackpoint in range(0, len(matchedTrackpoints[i])-1):
+                fromLoc = (matchedTrackpoints[i][trackpoint]["lat"], matchedTrackpoints[i][trackpoint]["lon"])
+                toLoc = (matchedTrackpoints[i][trackpoint+1]["lat"], matchedTrackpoints[i][trackpoint+1]["lon"])
                 totalDistance += haversine(fromLoc, toLoc) 
 
-        print("\n User with id=112 walked", round(totalDistance), 'km in 2008')
+        print("\nUser with id=112 walked", round(totalDistance), 'km in 2008')
         
         
     def task_10(self):
